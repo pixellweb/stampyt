@@ -1,0 +1,30 @@
+{
+    "name": "pixellweb/stampyt",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "B1nj",
+            "email": "postmaster@b1nj.fr"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "guzzlehttp/guzzle": "^6.5",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Citadelle\\Stampyt\\": "src"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Citadelle\\Stampyt\\StampytServiceProvider"
+            ]
+        }
+    },
+    "require-dev": {
+
+    }
+}
