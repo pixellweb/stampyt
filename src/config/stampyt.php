@@ -10,9 +10,6 @@ return [
     "url" => env('STAMPYT_URL', 'https://api.stampyt.io/v1/'),
 
 
-    'model_vehicule' => [
-        'class' => \App\Models\Vehicule\Vehicule::class,
-        /*'identifiant' => 'vin',*/
-    ],
+    'has_model_stock' => false,
 
 ];

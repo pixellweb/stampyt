@@ -58,20 +58,31 @@ class Import extends Command
         $progress_bar = $this->startProgressBar(0);
         $progress_bar->setMessage('Import des véhicules');
 
-        $query = config('stampyt.model_vehicule.class')::whereNotNull(config('stampyt.model_vehicule.identifiant'));
 
-        if (!$this->option('no-cache')) {
-            $query->whereNull('stampyt_player');
+        if (!config('stampyt.has_model_stock')) {
+            $query = \App\Models\Vehicule\Vehicule::query();
+        } else {
+            $query = \App\Models\Vehicule\Stock::with('vehicule');
         }
 
-        $sources_vehicules = $query->get()->groupBy('source_id');
+        if (!$this->option('no-cache')) {
+            if (!config('stampyt.has_model_stock')) {
+                $query->whereNull('stampyt_player');
+            } else {
+                $query->whereHas('vehicule', function ($query) {
+                    $query->whereNull('stampyt_player');
+                });
+            }
+        }
+
+        $sources_vehicules = $query->whereNotNull('vin')->with('source')->get()->groupBy('source_id');
 
 
         $panorama = new Panorama();
 
-        foreach ($sources_vehicules as $vehicules) {
+        foreach ($sources_vehicules as $stocks) {
 
-            $marketplace = $vehicules[0]->source->stampyt_marketplace;
+            $marketplace = $stocks->first()->source->stampyt_marketplace;
 
             $this->info('Recherche '.$marketplace);
 
@@ -80,16 +91,18 @@ class Import extends Command
             }
 
             $per_page = 50;
-            $nb_pages = ceil($vehicules->count() / $per_page);
+            $nb_pages = ceil($stocks->count() / $per_page);
             for ($page = 1; $page <= $nb_pages; $page++) {
-                $vehicules_page = $vehicules->forPage($page, $per_page);
+                $stocks_page = $stocks->forPage($page, $per_page);
 
-                $vehicules_with_panorama = $panorama->exists($vehicules_page->pluck('vin')->toArray(), $marketplace);
+                $vehicules_with_panorama = $panorama->exists($stocks_page->pluck('vin')->toArray(), $marketplace);
 
                 foreach ($vehicules_with_panorama as $vin) {
                     $this->info('Véhicule '.$vin);
 
-                    $vehicule = $vehicules_page->where('vin', $vin)->first();
+                    $stock = $stocks_page->where('vin', $vin)->first();
+
+                    $vehicule = !config('stampyt.has_model_stock') ? $stock : $stock->vehicule;
 
 
                     if ($vehicule->pixmycar_player) {
@@ -124,7 +137,7 @@ class Import extends Command
                             $media->type = Media::TYPE_IMAGE;
                             $media->repertoire = 'stampyt';
                             $media->publication_id = $vehicule->id;
-                            $media->publication_type = config('stampyt.model_vehicule.class');
+                            $media->publication_type = \App\Models\Vehicule\Vehicule::class;
                             $media->groupe = 'stampyt';
                             $media->save();
 
