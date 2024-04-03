@@ -82,7 +82,7 @@ class Import extends Command
 
         foreach ($sources_vehicules as $stocks) {
 
-            $marketplace = $stocks->first()->source->stampyt_marketplace;
+            $marketplace = config('site.stampyt_marketplace');
 
             $this->info('Recherche '.$marketplace);
 
