@@ -75,7 +75,7 @@ class Import extends Command
             }
         }
 
-        $sources_vehicules = $query->whereNotNull('vin')->with('source')->get()->groupBy('source_id');
+        $sources_vehicules = $query->with('source')->get()->groupBy('source_id');
 
 
         $panorama = new Panorama();
@@ -95,12 +95,18 @@ class Import extends Command
             for ($page = 1; $page <= $nb_pages; $page++) {
                 $stocks_page = $stocks->forPage($page, $per_page);
 
-                $vehicules_with_panorama = $panorama->exists($stocks_page->pluck('vin')->toArray(), $marketplace);
+                $vehicules_with_panorama_immatriculation = $panorama->exists($stocks_page->whereNotNull('immatriculation')->pluck('immatriculation')->toArray(), $marketplace);
+                $vehicules_with_panorama_vin = $panorama->exists($stocks_page->whereNotNull('vin')->pluck('vin')->toArray(), $marketplace);
 
-                foreach ($vehicules_with_panorama as $vin) {
-                    $this->info('Véhicule '.$vin);
+                $vehicules_with_panorama = array_merge($vehicules_with_panorama_immatriculation, $vehicules_with_panorama_vin);
 
-                    $stock = $stocks_page->where('vin', $vin)->first();
+
+                foreach ($vehicules_with_panorama as $reference) {
+                    $this->info('Véhicule '.$reference);
+
+                    $stock = $stocks_page->filter(function ($value, $key) use ($reference) {
+                        return $value->vin == $reference or $value->immatriculation == $reference;
+                    })->first();
 
                     $vehicule = !config('stampyt.has_model_stock') ? $stock : $stock->vehicule;
 
@@ -114,8 +120,8 @@ class Import extends Command
                     }
 
 
-                    $photos = collect($panorama->get($vin, $marketplace));
-                    $vehicule->stampyt_player = Panorama::reference($vin, $marketplace);
+                    $photos = collect($panorama->get($reference, $marketplace));
+                    $vehicule->stampyt_player = Panorama::reference($reference, $marketplace);
                     $vehicule->save();
 
 
