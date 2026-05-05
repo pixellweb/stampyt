@@ -121,7 +121,7 @@ class Import extends Command
 
 
                     $photos = collect($panorama->get($reference, $marketplace));
-                    $vehicule->stampyt_player = Panorama::reference($reference, $marketplace);
+                    $vehicule->stampyt_player = $panorama->has360($reference, $marketplace) ? Panorama::reference($reference, $marketplace) : null;
                     $vehicule->save();
 
 

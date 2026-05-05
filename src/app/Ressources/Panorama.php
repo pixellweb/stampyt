@@ -24,6 +24,12 @@ class Panorama extends Ressource
         return $this->hasPanorama($response);
     }
 
+    public function has360(string $reference, string $marketplace): bool
+    {
+        $types = $this->api->get('panorama-shootings/exists', ['ref' => self::reference($reference, $marketplace)]);
+        return in_array('PANORAMA_OUTSIDE_CLOSE', $types);
+    }
+
     public function exists(array $references, string $marketplace): array
     {
         $refs = [];
